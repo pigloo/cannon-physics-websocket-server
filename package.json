@@ -1,29 +1,27 @@
 {
-  "name": "OpenShift-Sample-App",
+  "name": "cannon-physics-websocket-server",
   "version": "1.0.0",
-  "description": "OpenShift Sample Application",
+  "description": "Simulating physics with cannon.js on a node server and streaming the results to the client",
   "keywords": [
-    "OpenShift",
     "Node.js",
-    "application",
-    "openshift"
+    "application"
   ],
   "author": {
-    "name": "OpenShift",
-    "email": "ramr@example.org",
-    "url": "http://www.openshift.com/"
+    "name": "@pigloo",
+    "email": "",
+    "url": "http://www.pigloo.co.uk/physics"
   },
-  "homepage": "http://www.openshift.com/",
+  "homepage": "http://www.pigloo.co.uk",
   "repository": {
     "type": "git",
     "url": "https://github.com/openshift/origin-server"
   },
   "engines": {
-    "node": ">= 0.11.12",
-    "npm": ">= 1.0.0"
+    "node": ">= 5.0.0",
+    "npm": ">= 3.3.6"
   },
   "scripts": {
-    "start": "node --harmony server.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "cannon": "^0.6.2",
@@ -37,5 +35,5 @@
   "devDependencies": {},
   "bundleDependencies": [],
   "private": true,
-  "main": " --harmony server.js"
+  "main": "server.js"
 }

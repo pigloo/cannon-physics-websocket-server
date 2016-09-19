@@ -51,6 +51,8 @@ class Tweets{
         body.linearDamping = 0.1;
         body.angularDamping = 0.05;
 
+        body.candidate = candidate;
+
         var i = this._bodies.length;
         this._bodies[i] = body;
 
@@ -71,7 +73,7 @@ class Tweets{
 
     randomPosition(){
         var x = -2.5 + Math.random() * 5;
-        var y = 20;
+        var y = 50;
         var z = -2.5 + Math.random() * 5;
 
         var position = new CANNON.Vec3(x, y, z);
@@ -120,24 +122,27 @@ class Tweets{
         while (i--) {
             body = this._bodies[i];
 
-            if (body.position.y < -150) {
+            if (body.position.y < -50) {
                 this._world.removeBody(this._bodies[i]);
                 this._bodies.splice(i, 1);
                 //console.log('body removed');
             }else {
 
-                var x = body.position.x;
-                var y = body.position.y;
-                var z = body.position.z;
+                var x = body.position.x.toFixed(4);
+                var y = body.position.y.toFixed(4);
+                var z = body.position.z.toFixed(4);
                 var position = {x:x,y:y,z:z};
 
-                var w = body.quaternion.w;
-                x = body.quaternion.x;
-                y = body.quaternion.y;
-                z = body.quaternion.z;
+                var w = body.quaternion.w.toFixed(4);
+                var x = body.quaternion.x;//.toFixed(4);
+                var y = body.quaternion.y;//.toFixed(4);
+                var z = body.quaternion.z;//.toFixed(4);
+
                 var rotation = {w:w,x:x,y:y,z:z};
 
-                data[i] = { position: position, rotation: rotation };
+                var candidate = body.candidate;
+
+                data[i] = { p: position, r: rotation, c: candidate};
             }
         }
 

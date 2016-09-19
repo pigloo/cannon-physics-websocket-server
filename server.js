@@ -113,14 +113,14 @@ wss.on('error', function (err) {
 // ADD FLOOR
 //#############################################################################
 
-var halfExtents = new CANNON.Vec3(4, 1, 4);
+var halfExtents = new CANNON.Vec3(8, 1, 8);
 var boxShape = new CANNON.Box(halfExtents);
 var boxBody = new CANNON.Body({
   mass: 0,
   //material: groundMaterial
 });
 boxBody.addShape(boxShape);
-boxBody.position.set(0,-8,0);
+boxBody.position.set(0,0,0);
 physics.addBody(boxBody);
 
 //#############################################################################
@@ -137,8 +137,8 @@ raf(function tick() {
     JSON.stringify(frame);
 
     wss.broadcast({
-        subscription: 'tweets',
-        data: frame
+        subscription: 't',
+        d: frame
     });
 
     raf(tick);
