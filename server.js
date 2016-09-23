@@ -4,8 +4,8 @@ var server_port = process.env.OPENSHIFT_NODEJS_PORT || 8080;
 var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
 
 const CANNON = require('cannon');
-var Physics = require('./physics/physics');
-var Tweets = require('./tweets');
+var Physics = require('./physics/Physics');
+var Tweets = require('./Tweets');
 var raf = require('raf');
 
 var ua = require('universal-analytics'),
@@ -17,9 +17,8 @@ express = require('express'),
 app = express(),
 port = 8000;
 
-
 var physics = new Physics();
-var tweets = new Tweets(physics.world);
+var tweets = new Tweets(physics.world, physics.sphereMaterial, removeTweet);
 
 //#############################################################################
 // HTTP SERVER
@@ -36,7 +35,7 @@ server.listen(server_port, server_ip_address, function () {
 });
 
 //#############################################################################
-//
+// TWITTER
 //#############################################################################
 
 var Twitter = require('node-tweet-stream'),
@@ -50,10 +49,10 @@ t = new Twitter({
 t.on('tweet', function (tweet) {
 
     var candidate;
-    var reTweet = false;
+    var reTweet = 0;
 
     if(tweet.retweeted_status){
-      reTweet = true;
+      reTweet = 1;
     }
 
     if(tweet.entities.hashtags.length > 0){
@@ -61,12 +60,12 @@ t.on('tweet', function (tweet) {
         var len = hashtags.length;
 
         for(var i = 0; i < len; i++){
-            if(hashtags[i].text.toUpperCase() === 'NEVERTRUMP'){
-                candidate = 0;
-                tweets.addTweet(candidate, reTweet);
-            } else if (hashtags[i].text.toUpperCase() === 'NEVERHILLARY'){
-                candidate = 1;
-                tweets.addTweet(candidate, reTweet);
+            if(hashtags[i].text.toUpperCase() === 'HILLARY2016'){
+                candidate = 0; //Hillary
+                tweets.addTweet(candidate, reTweet, addTweet.bind(this));
+            } else if (hashtags[i].text.toUpperCase() === 'TRUMP2016'){
+                candidate = 1; //Trump
+                tweets.addTweet(candidate, reTweet, addTweet.bind(this));
             } else {
                 // UNKNOWN
             }
@@ -78,12 +77,27 @@ t.on('error', function (err) {
     console.log('Oh no');
 });
 
-t.track('#nevertrump');
-t.track('#neverhillary');
+t.track('#trump2016');
+t.track('#hillary2016');
+//t.track('#nevertrump');
+//t.track('#neverhillary');
 
 //#############################################################################
 // WEBSOCKET
 //#############################################################################
+
+wss.on('connection', function (ws) {
+    console.log('Connected: ' + (ws.upgradeReq.headers['x-forwarded-for'] || ws.upgradeReq.connection.remoteAddress));
+    var visitor = ua('UA-19451182-10');
+    visitor.pageview('/physics/websocket').send();
+
+    var data = tweets.getAll();
+
+    ws.send(JSON.stringify({
+      s: 'all',
+      d: data
+    }));
+});
 
 wss.broadcast = function broadcast(data) {
     wss.clients.forEach(function each(client) {
@@ -99,29 +113,27 @@ wss.broadcast = function broadcast(data) {
     });
 };
 
-wss.on('connection', function (ws) {
-    console.log('Connected: ' + (ws.upgradeReq.headers['x-forwarded-for'] || ws.upgradeReq.connection.remoteAddress));
-    var visitor = ua('UA-19451182-10');
-    visitor.pageview('/websocket').send();
-});
-
 wss.on('error', function (err) {
     console.log(err);
 });
 
 //#############################################################################
-// ADD FLOOR
+// ADD TWEET
 //#############################################################################
 
-var halfExtents = new CANNON.Vec3(8, 1, 8);
-var boxShape = new CANNON.Box(halfExtents);
-var boxBody = new CANNON.Body({
-  mass: 0,
-  //material: groundMaterial
-});
-boxBody.addShape(boxShape);
-boxBody.position.set(0,0,0);
-physics.addBody(boxBody);
+function addTweet(data){
+    wss.broadcast({
+        s: 'add',
+        d: data
+    });
+}
+
+function removeTweet(data){
+  wss.broadcast({
+      s: 'remove',
+      d: data
+  });
+}
 
 //#############################################################################
 // ANIMATION FRAMES
@@ -130,15 +142,11 @@ physics.addBody(boxBody);
 raf(function tick() {
 
     physics.updatePhysics();
-    var frame = tweets.updatePhysics();
-
-    //console.log(frame);
-
-    JSON.stringify(frame);
+    var data = tweets.updatePositions();
 
     wss.broadcast({
-        subscription: 't',
-        d: frame
+      s: 'update',
+      d: data
     });
 
     raf(tick);

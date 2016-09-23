@@ -1,48 +1,46 @@
  "use strict";
 
 const CANNON = require('cannon');
+const AbstractPhysics = require('./AbstractPhysics');
 
-class Physics {
+class Physics extends AbstractPhysics {
 
-    constructor(){
+    constructor() {
 
-        this._world = new CANNON.World();
-        this._world.broadphase = new CANNON.NaiveBroadphase();
-        //_world.broadphase = new CANNON.SAPBroadphase(world);
-        this._world.broadphase.useBoundingBoxes = true;
-        this._world.allowSleep = true;
-        this._world.gravity.set(0, -9.82, 0);
+        super();
 
-        this._world.solver.iterations = 10;
-        this._world.defaultContactMaterial.contactEquationStiffness = 1e9;
-        this._world.defaultContactMaterial.contactEquationRelaxation = 1;
+        this._groundMaterial = new CANNON.Material('ground');
+        this._sphereMaterial = new CANNON.Material('sphere');
 
-    }
+        this._sphere_ground = new CANNON.ContactMaterial(this._groundMaterial, this._sphereMaterial, {
+          friction: 0.001,
+          restitution: 0.3
+        });
 
-    get world(){
+        this._world.addContactMaterial(this._sphere_ground);
 
-        return this._world;
+        this.addFloor();
 
     }
 
-    updatePhysics() {
-
-        var dt = 1 / 60;
-        this._world.step(dt);
-
+    addFloor() {
+        var halfExtents = new CANNON.Vec3(4, 1, 4);
+        var boxShape = new CANNON.Box(halfExtents);
+        var boxBody = new CANNON.Body({
+          mass: 0,
+          material: this._groundMaterial
+        });
+        boxBody.addShape(boxShape);
+        boxBody.position.set(0,0,0);
+        this._world.addBody(boxBody);
     }
 
-    addBody(body) {
+    get sphereMaterial(){
 
-        this._world.addBody(body);
-
+        return this._sphereMaterial;
+        
     }
 
-    removeBody(body) {
-
-        this._world.removeBody(body);
-
-    }
 }
 
 module.exports = Physics;

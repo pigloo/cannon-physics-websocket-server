@@ -3,8 +3,11 @@
 const CANNON = require('cannon');
 
 class Tweets{
-    constructor(world){
+    constructor(world, sphereMaterial, removeTweet){
         this._world = world;
+        this._sphereMaterial = sphereMaterial;
+
+        this._removeTweet = removeTweet;
 
         this._bodies = [];
         this._ToRad = 0.0174532925199432957;
@@ -13,33 +16,28 @@ class Tweets{
         this._reTweetShape = new CANNON.Sphere(0.15);
     }
 
-    addTweet(candidate,reTweet){
+    addTweet(candidate,reTweet,callback){
 
-        var shape = this._tweetShape;
+        var identifier = new Date();
+        identifier = identifier.getTime();
+        //identifier = identifier.toString().substr(identifier.length - 5);
 
-        /*
-        if(reTweet === false){
+        var shape;
+
+        if(reTweet !== 1){
             shape = this._tweetShape;
-        }else {
+        }else{
             shape = this._reTweetShape;
         }
 
-
-        if(candidate === 0){
-            material = this._trumpMaterial;
-        }else{
-            material = this._hillaryMaterial;
-        }
-        */
-
         var position = this.randomPosition();
         //var rotation = this.randomRotation();
-        var linearVelocity = this.randomLinearVelocity(40);
-        var angularVelocity = this.randomAngularVelocity(40);
+        //var linearVelocity = this.randomLinearVelocity(40);
+        //var angularVelocity = this.randomAngularVelocity(40);
 
         var body = new CANNON.Body({
           mass: 100,
-          //material: sphereMaterial
+          material: this._sphereMaterial
         });
 
         body.addShape(shape);
@@ -49,26 +47,22 @@ class Tweets{
         //body.velocity.copy(linearVelocity);
 
         body.linearDamping = 0.1;
-        body.angularDamping = 0.05;
-
-        body.candidate = candidate;
+        body.angularDamping = 0.1;
 
         var i = this._bodies.length;
         this._bodies[i] = body;
 
         this._world.add(body);
 
-        //console.log('body added');
+        body.candidate = candidate;
+        body.reTweet = reTweet;
+        body.id = identifier;
+        var quaternion = body.quaternion;
 
-        /*
-        body.addEventListener("collide", function(e){
-          console.log(e);
-        });
-        body.removeEventListener("collide", function(e){
-          console.log("event listener removed");
-          console.log(e);
-        });
-        */
+        var data = {id: identifier, c: candidate, rt: reTweet, p: position, q: quaternion};
+
+        callback(data);
+
     }
 
     randomPosition(){
@@ -114,36 +108,87 @@ class Tweets{
         return angularVelocity;
     }
 
-    updatePhysics(){
+    updatePositions(){
         var body, i = this._bodies.length;
 
         var data = [];
+        //var data = new ArrayBuffer(7 * i * 4);
 
         while (i--) {
             body = this._bodies[i];
+            var id = body.id;
 
             if (body.position.y < -50) {
                 this._world.removeBody(this._bodies[i]);
                 this._bodies.splice(i, 1);
                 //console.log('body removed');
-            }else {
+                this._removeTweet({id:id});
 
-                var x = body.position.x.toFixed(4);
-                var y = body.position.y.toFixed(4);
-                var z = body.position.z.toFixed(4);
-                var position = {x:x,y:y,z:z};
+            } else if (body.sleepState !== 2) {
 
-                var w = body.quaternion.w.toFixed(4);
-                var x = body.quaternion.x;//.toFixed(4);
-                var y = body.quaternion.y;//.toFixed(4);
-                var z = body.quaternion.z;//.toFixed(4);
+                var px = body.position.x.toFixed(4);
+                var py = body.position.y.toFixed(4);
+                var pz = body.position.z.toFixed(4);
+                var position = {x:px,y:py,z:pz};
 
-                var rotation = {w:w,x:x,y:y,z:z};
+                var qw = body.quaternion.w.toFixed(4);
+                var qx = body.quaternion.x;//.toFixed(4);
+                var qy = body.quaternion.y;//.toFixed(4);
+                var qz = body.quaternion.z;//.toFixed(4);
+
+                var quaternion = {w:qw,x:qx,y:qy,z:qz};
 
                 var candidate = body.candidate;
+                var reTweet = body.reTweet;
 
-                data[i] = { p: position, r: rotation, c: candidate};
+                data.push({ id: id, p: position, q: quaternion, c: candidate, rt: reTweet });
+
+                /*
+                var px = body.position.x;
+                var py = body.position.y;
+                var pz = body.position.z;
+                var qw = body.quaternion.w;
+                var qx = body.quaternion.x;
+                var qy = body.quaternion.y;
+                var qz = body.quaternion.z;
+
+                var d = new Float32Array(data);
+                */
+
             }
+        }
+
+        return data;
+    }
+
+    getAll(){
+        var body, i = this._bodies.length;
+
+        var data = [];
+        //var data = new ArrayBuffer(7 * i * 4);
+
+        while (i--) {
+
+            body = this._bodies[i];
+
+            var px = body.position.x.toFixed(4);
+            var py = body.position.y.toFixed(4);
+            var pz = body.position.z.toFixed(4);
+            var position = {x:px,y:py,z:pz};
+
+            var qw = body.quaternion.w.toFixed(4);
+            var qx = body.quaternion.x;//.toFixed(4);
+            var qy = body.quaternion.y;//.toFixed(4);
+            var qz = body.quaternion.z;//.toFixed(4);
+
+            var quaternion = {w:qw,x:qx,y:qy,z:qz};
+
+            var id = body.id;
+            var candidate = body.candidate;
+            var reTweet = body.reTweet;
+
+            data.push({ id: id, p: position, q: quaternion, c: candidate, rt: reTweet});
+
         }
 
         return data;
