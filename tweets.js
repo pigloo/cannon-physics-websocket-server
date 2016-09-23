@@ -31,9 +31,9 @@ class Tweets{
         }
 
         var position = this.randomPosition();
-        //var rotation = this.randomRotation();
-        //var linearVelocity = this.randomLinearVelocity(40);
-        //var angularVelocity = this.randomAngularVelocity(40);
+        var rotation = this.randomRotation();
+        var linearVelocity = this.randomLinearVelocity(0.4);
+        var angularVelocity = this.randomAngularVelocity(40);
 
         var body = new CANNON.Body({
           mass: 100,
@@ -42,12 +42,12 @@ class Tweets{
 
         body.addShape(shape);
         body.position.copy(position);
-        //body.quaternion.copy(rotation);
-        //body.angularVelocity.copy(angularVelocity);
-        //body.velocity.copy(linearVelocity);
+        body.quaternion.copy(rotation);
+        body.angularVelocity.copy(angularVelocity);
+        body.velocity.copy(linearVelocity);
 
-        body.linearDamping = 0.1;
-        body.angularDamping = 0.1;
+        body.linearDamping = 0.25;
+        body.angularDamping = 0.25;
 
         var i = this._bodies.length;
         this._bodies[i] = body;
@@ -75,20 +75,16 @@ class Tweets{
         return position;
     }
 
-    /*
     randomRotation(){
         var rx = (Math.floor((Math.random() * 360) + 1)) * this._ToRad;
         var ry = (Math.floor((Math.random() * 360) + 1)) * this._ToRad;
         var rz = (Math.floor((Math.random() * 360) + 1)) * this._ToRad;
 
-        var e = new THREE.Euler();
-        e.set(rx, ry, rz);
-        var q = new THREE.Quaternion();
-        q.setFromEuler(e);
+        var q = new CANNON.Quaternion();
+        q.setFromEuler(rx,ry,rz);
 
         return q;
     }
-    */
 
     randomLinearVelocity(max){
         var x = (0.5 - Math.random()) * max;
@@ -196,6 +192,17 @@ class Tweets{
 
     get bodies(){
         return this._bodies;
+    }
+
+    scatter(){
+        for(var i = 0; i < this._bodies.length; i++){
+            var body = this.bodies[i];
+            body.wakeUp();
+            var linearVelocity = this.randomLinearVelocity(40);
+            var angularVelocity = this.randomAngularVelocity(40);
+            body.angularVelocity.copy(angularVelocity);
+            body.velocity.copy(linearVelocity);
+        }
     }
 
 }

@@ -94,10 +94,18 @@ wss.on('connection', function (ws) {
     var data = tweets.getAll();
 
     ws.send(JSON.stringify({
-      s: 'all',
-      d: data
+        s: 'all',
+        d: data
     }));
+
+    ws.on('message', function (evt, flags) {
+        //var object = JSON.parse(evt.data);
+        console.log(evt.data);
+        tweets.scatter();
+    });
 });
+
+
 
 wss.broadcast = function broadcast(data) {
     wss.clients.forEach(function each(client) {
