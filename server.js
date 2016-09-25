@@ -5,7 +5,7 @@ var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
 
 const CANNON = require('cannon');
 var Physics = require('./physics/Physics');
-var Tweets = require('./Tweets');
+var Tweets = require('./objects/Tweets');
 var raf = require('raf');
 
 var ua = require('universal-analytics'),
@@ -91,21 +91,19 @@ wss.on('connection', function (ws) {
     var visitor = ua('UA-19451182-10');
     visitor.pageview('/physics/websocket').send();
 
-    var data = tweets.getAll();
+    updateAll(ws);
 
-    ws.send(JSON.stringify({
-        s: 'all',
-        d: data
-    }));
-
-    ws.on('message', function (evt, flags) {
-        //var object = JSON.parse(evt.data);
-        console.log(evt.data);
-        tweets.scatter();
+    ws.on('message', function message(evt, flags) {
+        var object = JSON.parse(evt);
+        //console.log(object);
+        if(object.d === 'scatter'){
+            tweets.scatter();
+        }
+        if(object.d === 'updateAll'){
+            updateAll(ws);
+        }
     });
 });
-
-
 
 wss.broadcast = function broadcast(data) {
     wss.clients.forEach(function each(client) {
@@ -129,6 +127,15 @@ wss.on('error', function (err) {
 // ADD TWEET
 //#############################################################################
 
+function updateAll(ws){
+    var data = tweets.getAll();
+
+    ws.send(JSON.stringify({
+        s: 'all',
+        d: data
+    }));
+}
+
 function addTweet(data){
     wss.broadcast({
         s: 'add',
@@ -137,10 +144,10 @@ function addTweet(data){
 }
 
 function removeTweet(data){
-  wss.broadcast({
-      s: 'remove',
-      d: data
-  });
+    wss.broadcast({
+        s: 'remove',
+        d: data
+    });
 }
 
 //#############################################################################

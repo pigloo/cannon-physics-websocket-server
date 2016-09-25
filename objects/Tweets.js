@@ -18,9 +18,7 @@ class Tweets{
 
     addTweet(candidate,reTweet,callback){
 
-        var identifier = new Date();
-        identifier = identifier.getTime();
-        //identifier = identifier.toString().substr(identifier.length - 5);
+        var identifier = this.generateId();
 
         var shape;
 
@@ -32,8 +30,8 @@ class Tweets{
 
         var position = this.randomPosition();
         var rotation = this.randomRotation();
-        var linearVelocity = this.randomLinearVelocity(0.4);
-        var angularVelocity = this.randomAngularVelocity(40);
+        var linearVelocity = this.randomLinearVelocity(1);
+        var angularVelocity = this.randomAngularVelocity(100);
 
         var body = new CANNON.Body({
           mass: 100,
@@ -65,10 +63,17 @@ class Tweets{
 
     }
 
+    generateId(){
+        var S4 = function() {
+            return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
+        };
+        return (S4()+S4());
+    }
+
     randomPosition(){
-        var x = -2.5 + Math.random() * 5;
+        var x = -4 + Math.random() * 8;
         var y = 50;
-        var z = -2.5 + Math.random() * 5;
+        var z = -4 + Math.random() * 8;
 
         var position = new CANNON.Vec3(x, y, z);
 
@@ -104,11 +109,22 @@ class Tweets{
         return angularVelocity;
     }
 
+    scatter(){
+        for(var i = 0; i < this._bodies.length; i++){
+            var body = this.bodies[i];
+            body.wakeUp();
+            var linearVelocity = this.randomLinearVelocity(40);
+            var angularVelocity = this.randomAngularVelocity(40);
+            body.angularVelocity.copy(angularVelocity);
+            body.velocity.copy(linearVelocity);
+        }
+    }
+
     updatePositions(){
         var body, i = this._bodies.length;
 
         var data = [];
-        //var data = new ArrayBuffer(7 * i * 4);
+        //var data = new ArrayBuffer(7 * i * 4
 
         while (i--) {
             body = this._bodies[i];
@@ -119,7 +135,6 @@ class Tweets{
                 this._bodies.splice(i, 1);
                 //console.log('body removed');
                 this._removeTweet({id:id});
-
             } else if (body.sleepState !== 2) {
 
                 var px = body.position.x.toFixed(4);
@@ -192,17 +207,6 @@ class Tweets{
 
     get bodies(){
         return this._bodies;
-    }
-
-    scatter(){
-        for(var i = 0; i < this._bodies.length; i++){
-            var body = this.bodies[i];
-            body.wakeUp();
-            var linearVelocity = this.randomLinearVelocity(40);
-            var angularVelocity = this.randomAngularVelocity(40);
-            body.angularVelocity.copy(angularVelocity);
-            body.velocity.copy(linearVelocity);
-        }
     }
 
 }
