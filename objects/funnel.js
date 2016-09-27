@@ -1,3 +1,5 @@
+"use strict";
+
 const CANNON = require('cannon');
 
 module.exports = function funnel(radius, tube, radialSegments, tubularSegments, arc) {

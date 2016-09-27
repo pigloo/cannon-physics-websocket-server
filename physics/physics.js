@@ -1,4 +1,4 @@
- "use strict";
+"use strict";
 
 const CANNON = require('cannon');
 const AbstractPhysics = require('./AbstractPhysics');
@@ -19,8 +19,8 @@ class Physics extends AbstractPhysics {
             restitution: 0
         });
         this._sphere_ground = new CANNON.ContactMaterial(this._groundMaterial, this._sphereMaterial, {
-          friction: 0.001,
-          restitution: 0.3
+            friction: 0.001,
+            restitution: 0.3
         });
 
         this._world.addContactMaterial(this._sphere_funnel);
@@ -30,7 +30,7 @@ class Physics extends AbstractPhysics {
 
         this.addFunnel(0);
         this.addFunnel(-0.1);
-        this.addFunnel(-0.2);
+        //this.addFunnel(-0.2);
 
     }
 
@@ -42,14 +42,14 @@ class Physics extends AbstractPhysics {
           material: this._groundMaterial
         });
         boxBody.addShape(boxShape);
-        boxBody.position.set(0,0,0);
+        boxBody.position.set(0,-4,0);
         this._world.addBody(boxBody);
     }
 
     addFunnel(pos){
         var ToRad = 0.0174532925199432957;
 
-        var shape = funnel(5, 4.6, 16, 32);
+        var shape = funnel(5, 4.6, 8, 16);
 
         var shapeBody = new CANNON.Body({
           mass: 0,

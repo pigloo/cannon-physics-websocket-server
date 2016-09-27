@@ -1,4 +1,4 @@
- "use strict";
+"use strict";
 
 const CANNON = require('cannon');
 
@@ -30,22 +30,22 @@ class Tweets{
 
         var position = this.randomPosition();
         var rotation = this.randomRotation();
-        var linearVelocity = this.randomLinearVelocity(1);
-        var angularVelocity = this.randomAngularVelocity(100);
+        //var linearVelocity = this.randomLinearVelocity(1);
+        //var angularVelocity = this.randomAngularVelocity(100);
 
         var body = new CANNON.Body({
-          mass: 100,
-          material: this._sphereMaterial
+            mass: 10,
+            material: this._sphereMaterial
         });
 
         body.addShape(shape);
         body.position.copy(position);
         body.quaternion.copy(rotation);
-        body.angularVelocity.copy(angularVelocity);
-        body.velocity.copy(linearVelocity);
+        //body.angularVelocity.copy(angularVelocity);
+        //body.velocity.copy(linearVelocity);
 
-        body.linearDamping = 0.25;
-        body.angularDamping = 0.25;
+        body.linearDamping = 0;//0.25;
+        body.angularDamping = 0;//0.25;
 
         var i = this._bodies.length;
         this._bodies[i] = body;
@@ -71,9 +71,9 @@ class Tweets{
     }
 
     randomPosition(){
-        var x = -4 + Math.random() * 8;
-        var y = 50;
-        var z = -4 + Math.random() * 8;
+        var x = -3 + Math.random() * 6;
+        var y = 15;
+        var z = -3 + Math.random() * 6;
 
         var position = new CANNON.Vec3(x, y, z);
 
