@@ -5,7 +5,8 @@ var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
 
 const CANNON = require('cannon');
 var Physics = require('./physics/Physics');
-var Tweets = require('./objects/Tweets');
+//var Tweets = require('./objects/Tweets');
+var Transactions = require('./objects/Transactions');
 var raf = require('raf');
 
 var ua = require('universal-analytics'),
@@ -13,12 +14,16 @@ server = require('http').createServer(),
 url = require('url'),
 WebSocketServer = require('ws').Server,
 wss = new WebSocketServer({ server: server }),
+WebSocketClient = require('ws'),
+wsc = new WebSocketClient('wss://ws.blockchain.info/inv'),
 express = require('express'),
 app = express(),
 port = 8000;
 
+
 var physics = new Physics();
-var tweets = new Tweets(physics.world, physics.sphereMaterial, removeTweet);
+//var tweets = new Tweets(physics.world, physics.sphereMaterial, removeTweet);
+var transactions = new Transactions(physics.world, physics.sphereMaterial, removeTransaction);
 
 //#############################################################################
 // HTTP SERVER
@@ -37,7 +42,7 @@ server.listen(server_port, server_ip_address, function () {
 //#############################################################################
 // TWITTER
 //#############################################################################
-
+/*
 var Twitter = require('node-tweet-stream'),
 t = new Twitter({
     consumer_key: 'NZfwFm5Ql5AbIlgRtZfjF1JNu',
@@ -81,6 +86,20 @@ t.track('#trump2016');
 t.track('#hillary2016');
 //t.track('#nevertrump');
 //t.track('#neverhillary');
+*/
+
+//#############################################################################
+// BLOCKCHAIN
+//#############################################################################
+
+wsc.on('open', function() {
+    //wsc.send('{"op":"ping_block"}{"op":"blocks_sub"}{"op":"unconfirmed_sub"}');
+    wsc.send('{"op":"unconfirmed_sub"}');
+});
+wsc.on('message', function(message) {
+    console.log('transaction');
+    transactions.addTransaction(addTransaction.bind(this));
+});
 
 //#############################################################################
 // WEBSOCKET
@@ -97,7 +116,7 @@ wss.on('connection', function (ws) {
         var object = JSON.parse(evt);
         //console.log(object);
         if(object.d === 'scatter'){
-            tweets.scatter();
+            transactions.scatter();
         }
         if(object.d === 'updateAll'){
             updateAll(ws);
@@ -127,6 +146,7 @@ wss.on('error', function (err) {
 // ADD TWEET
 //#############################################################################
 
+/*
 function updateAll(ws){
     var data = tweets.getAll();
 
@@ -149,6 +169,34 @@ function removeTweet(data){
         d: data
     });
 }
+*/
+
+//#############################################################################
+// ADD TRANSACTION
+//#############################################################################
+
+function updateAll(ws){
+    var data = transactions.getAll();
+
+    ws.send(JSON.stringify({
+        s: 'all',
+        d: data
+    }));
+}
+
+function addTransaction(data){
+    wss.broadcast({
+        s: 'add',
+        d: data
+    });
+}
+
+function removeTransaction(data){
+    wss.broadcast({
+        s: 'remove',
+        d: data
+    });
+}
 
 //#############################################################################
 // ANIMATION FRAMES
@@ -157,7 +205,8 @@ function removeTweet(data){
 raf(function tick() {
 
     physics.updatePhysics();
-    var data = tweets.updatePositions();
+    //var data = tweets.updatePositions();
+    var data = transactions.updatePositions();
 
     wss.broadcast({
       s: 'update',

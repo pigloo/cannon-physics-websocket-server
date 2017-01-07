@@ -26,10 +26,10 @@ class Physics extends AbstractPhysics {
         this._world.addContactMaterial(this._sphere_funnel);
         this._world.addContactMaterial(this._sphere_ground);
 
-        //this.addFloor();
+        this.addFloor();
 
-        this.addFunnel(0);
-        this.addFunnel(-0.1);
+        //this.addFunnel(0);
+        //this.addFunnel(-0.1);
         //this.addFunnel(-0.2);
 
     }

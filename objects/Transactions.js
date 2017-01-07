@@ -2,31 +2,32 @@
 
 const CANNON = require('cannon');
 
-class Tweets{
-    constructor(world, sphereMaterial, removeTweet){
+class Transactions{
+    constructor(world, sphereMaterial, removeTransaction){
         this._world = world;
         this._sphereMaterial = sphereMaterial;
 
-        this._removeTweet = removeTweet;
+        this._removeTransaction = removeTransaction;
 
         this._bodies = [];
         this._ToRad = 0.0174532925199432957;
 
-        this._tweetShape = new CANNON.Sphere(0.2);
-        this._reTweetShape = new CANNON.Sphere(0.15);
+        //this._TransactionShape = new CANNON.Sphere(0.2);
+        //this._reTransactionShape = new CANNON.Sphere(0.15);
+
+        this._TransactionShape = new CANNON.Cylinder(0.4,0.4,0.1,16);
+        var q = new CANNON.Quaternion();
+        q.setFromAxisAngle(new CANNON.Vec3(1,0,0),Math.PI / 2);
+        this._TransactionShape.transformAllPoints(new CANNON.Vec3(),q);
     }
 
-    addTweet(candidate,reTweet,callback){
+    addTransaction(callback){
 
         var identifier = this.generateId();
 
         var shape;
 
-        if(reTweet !== 1){
-            shape = this._tweetShape;
-        }else{
-            shape = this._reTweetShape;
-        }
+        shape = this._TransactionShape;
 
         var position = this.randomPosition();
         var rotation = this.randomRotation();
@@ -35,10 +36,11 @@ class Tweets{
 
         var body = new CANNON.Body({
             mass: 10,
-            material: this._sphereMaterial
+            material: this._sphereMaterial,
         });
 
         body.addShape(shape);
+
         body.position.copy(position);
         body.quaternion.copy(rotation);
         //body.angularVelocity.copy(angularVelocity);
@@ -52,12 +54,15 @@ class Tweets{
 
         this._world.add(body);
 
+        var candidate = 0;
+        var reTransaction = 0;
+
         body.candidate = candidate;
-        body.reTweet = reTweet;
+        body.reTransaction = reTransaction;
         body.id = identifier;
         var quaternion = body.quaternion;
 
-        var data = {id: identifier, c: candidate, rt: reTweet, p: position, q: quaternion};
+        var data = {id: identifier, c: candidate, rt: reTransaction, p: position, q: quaternion};
 
         callback(data);
 
@@ -134,7 +139,7 @@ class Tweets{
                 this._world.removeBody(this._bodies[i]);
                 this._bodies.splice(i, 1);
                 //console.log('body removed');
-                this._removeTweet({id:id});
+                this._removeTransaction({id:id});
             } else if (body.sleepState !== 2) {
 
                 var px = body.position.x.toFixed(4);
@@ -150,9 +155,9 @@ class Tweets{
                 var quaternion = {w:qw,x:qx,y:qy,z:qz};
 
                 var candidate = body.candidate;
-                var reTweet = body.reTweet;
+                var reTransaction = body.reTransaction;
 
-                data.push({ id: id, p: position, q: quaternion, c: candidate, rt: reTweet });
+                data.push({ id: id, p: position, q: quaternion, c: candidate, rt: reTransaction });
 
                 /*
                 var px = body.position.x;
@@ -196,9 +201,9 @@ class Tweets{
 
             var id = body.id;
             var candidate = body.candidate;
-            var reTweet = body.reTweet;
+            var reTransaction = body.reTransaction;
 
-            data.push({ id: id, p: position, q: quaternion, c: candidate, rt: reTweet});
+            data.push({ id: id, p: position, q: quaternion, c: candidate, rt: reTransaction});
 
         }
 
@@ -211,4 +216,4 @@ class Tweets{
 
 }
 
-module.exports = Tweets;
+module.exports = Transactions;
