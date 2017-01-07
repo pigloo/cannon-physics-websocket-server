@@ -4,7 +4,7 @@ var server_port = process.env.OPENSHIFT_NODEJS_PORT || 8080;
 var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
 
 const CANNON = require('cannon');
-var Physics = require('./physics/Physics');
+//var Physics = require('./physics/Physics');
 //var Tweets = require('./objects/Tweets');
 var Transactions = require('./objects/Transactions');
 var raf = require('raf');
