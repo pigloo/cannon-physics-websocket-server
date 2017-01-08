@@ -97,7 +97,7 @@ wsc.on('open', function() {
     wsc.send('{"op":"unconfirmed_sub"}');
 });
 wsc.on('message', function(message) {
-    console.log('transaction');
+    //console.log('transaction');
     transactions.addTransaction(addTransaction.bind(this));
 });
 

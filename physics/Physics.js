@@ -35,7 +35,7 @@ class Physics extends AbstractPhysics {
     }
 
     addFloor() {
-        var halfExtents = new CANNON.Vec3(4, 1, 4);
+        var halfExtents = new CANNON.Vec3(2.5, 1, 2.5);
         var boxShape = new CANNON.Box(halfExtents);
         var boxBody = new CANNON.Body({
           mass: 0,

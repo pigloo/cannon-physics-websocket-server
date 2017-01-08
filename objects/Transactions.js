@@ -142,22 +142,22 @@ class Transactions{
                 this._removeTransaction({id:id});
             } else if (body.sleepState !== 2) {
 
-                var px = body.position.x.toFixed(4);
-                var py = body.position.y.toFixed(4);
-                var pz = body.position.z.toFixed(4);
+                var px = +body.position.x.toFixed(4);
+                var py = +body.position.y.toFixed(4);
+                var pz = +body.position.z.toFixed(4);
                 var position = {x:px,y:py,z:pz};
 
-                var qw = body.quaternion.w.toFixed(4);
-                var qx = body.quaternion.x;//.toFixed(4);
-                var qy = body.quaternion.y;//.toFixed(4);
-                var qz = body.quaternion.z;//.toFixed(4);
-
+                var qw = +body.quaternion.w.toFixed(4);
+                var qx = +body.quaternion.x.toFixed(4);
+                var qy = +body.quaternion.y.toFixed(4);
+                var qz = +body.quaternion.z.toFixed(4);
                 var quaternion = {w:qw,x:qx,y:qy,z:qz};
 
                 var candidate = body.candidate;
                 var reTransaction = body.reTransaction;
 
-                data.push({ id: id, p: position, q: quaternion, c: candidate, rt: reTransaction });
+                //data.push({ id: id, p: position, q: quaternion, c: candidate, rt: reTransaction });
+                data.push({ id: id, p: position, q: quaternion });
 
                 /*
                 var px = body.position.x;
@@ -187,23 +187,23 @@ class Transactions{
 
             body = this._bodies[i];
 
-            var px = body.position.x.toFixed(4);
-            var py = body.position.y.toFixed(4);
-            var pz = body.position.z.toFixed(4);
+            var px = +body.position.x.toFixed(4);
+            var py = +body.position.y.toFixed(4);
+            var pz = +body.position.z.toFixed(4);
             var position = {x:px,y:py,z:pz};
 
-            var qw = body.quaternion.w.toFixed(4);
-            var qx = body.quaternion.x;//.toFixed(4);
-            var qy = body.quaternion.y;//.toFixed(4);
-            var qz = body.quaternion.z;//.toFixed(4);
-
+            var qw = +body.quaternion.w.toFixed(4);
+            var qx = +body.quaternion.x.toFixed(4);
+            var qy = +body.quaternion.y.toFixed(4);
+            var qz = +body.quaternion.z.toFixed(4);
             var quaternion = {w:qw,x:qx,y:qy,z:qz};
 
             var id = body.id;
             var candidate = body.candidate;
             var reTransaction = body.reTransaction;
 
-            data.push({ id: id, p: position, q: quaternion, c: candidate, rt: reTransaction});
+            //data.push({ id: id, p: position, q: quaternion, c: candidate, rt: reTransaction});
+            data.push({ id: id, p: position, q: quaternion });
 
         }
 
