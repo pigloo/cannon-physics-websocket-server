@@ -3,27 +3,36 @@
 const CANNON = require('cannon');
 
 class Transactions{
-    constructor(world, sphereMaterial, removeTransaction){
+    constructor(world, sphereMaterial){
         this._world = world;
         this._sphereMaterial = sphereMaterial;
 
-        this._removeTransaction = removeTransaction;
-
         this._bodies = [];
         this._ToRad = 0.0174532925199432957;
+        this._lastId = 1;
 
         //this._TransactionShape = new CANNON.Sphere(0.2);
         //this._reTransactionShape = new CANNON.Sphere(0.15);
 
+        //ROTATE CYLINDER TO MATCH THREE.JS ORIENTATION
         this._TransactionShape = new CANNON.Cylinder(0.4,0.4,0.1,16);
         var q = new CANNON.Quaternion();
         q.setFromAxisAngle(new CANNON.Vec3(1,0,0),Math.PI / 2);
         this._TransactionShape.transformAllPoints(new CANNON.Vec3(),q);
     }
 
-    addTransaction(callback){
+    getNextId() {
+      // Resets integer
+      if (this._lastId > 2147483647) {
+          this._lastId = 1;
+      }
+      return this._lastId++;
+    }
 
-        var identifier = this.generateId();
+    addTransaction(broadcast){
+
+        //var identifier = this.generateId();
+        var identifier = this.getNextId();
 
         var shape;
 
@@ -31,8 +40,8 @@ class Transactions{
 
         var position = this.randomPosition();
         var rotation = this.randomRotation();
-        //var linearVelocity = this.randomLinearVelocity(1);
-        //var angularVelocity = this.randomAngularVelocity(100);
+        var linearVelocity = this.randomLinearVelocity(1);
+        var angularVelocity = this.randomAngularVelocity(10);
 
         var body = new CANNON.Body({
             mass: 10,
@@ -43,8 +52,8 @@ class Transactions{
 
         body.position.copy(position);
         body.quaternion.copy(rotation);
-        //body.angularVelocity.copy(angularVelocity);
-        //body.velocity.copy(linearVelocity);
+        body.angularVelocity.copy(angularVelocity);
+        body.velocity.copy(linearVelocity);
 
         body.linearDamping = 0;//0.25;
         body.angularDamping = 0;//0.25;
@@ -54,26 +63,54 @@ class Transactions{
 
         this._world.add(body);
 
-        var candidate = 0;
-        var reTransaction = 0;
-
-        body.candidate = candidate;
-        body.reTransaction = reTransaction;
         body.id = identifier;
         var quaternion = body.quaternion;
 
-        var data = {id: identifier, c: candidate, rt: reTransaction, p: position, q: quaternion};
+        //NECCESARY???
 
-        callback(data);
+        var px = +body.position.x.toFixed(4);
+        var py = +body.position.y.toFixed(4);
+        var pz = +body.position.z.toFixed(4);
+        position = {x:px,y:py,z:pz};
+
+        var qw = +body.quaternion.w.toFixed(4);
+        var qx = +body.quaternion.x.toFixed(4);
+        var qy = +body.quaternion.y.toFixed(4);
+        var qz = +body.quaternion.z.toFixed(4);
+        quaternion = {w:qw,x:qx,y:qy,z:qz};
+
+        //var data = {id: identifier, c: candidate, rt: reTransaction, p: position, q: quaternion};
+        var data = {id: identifier, p: position, q: quaternion};
+
+        //callback(data);
+
+        var buffer = new ArrayBuffer(33);
+        var view = new DataView(buffer);
+
+        view.setUint8(0, 1); //ADD NODE CODE 1
+        view.setUint32(1, data.id);
+        view.setFloat32(5, data.p.x);
+        view.setFloat32(9, data.p.y);
+        view.setFloat32(13, data.p.z);
+        view.setFloat32(17, data.q.w);
+        view.setFloat32(21, data.q.x);
+        view.setFloat32(25, data.q.y);
+        view.setFloat32(29, data.q.z);
+
+        //console.log(view.getUint32(1));
+
+        broadcast(buffer, { binary: true, mask: true });
 
     }
 
+    /*
     generateId(){
         var S4 = function() {
             return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
         };
         return (S4()+S4());
     }
+    */
 
     randomPosition(){
         var x = -3 + Math.random() * 6;
@@ -125,11 +162,10 @@ class Transactions{
         }
     }
 
-    updatePositions(){
+    updatePositions(broadcast){
         var body, i = this._bodies.length;
 
         var data = [];
-        //var data = new ArrayBuffer(7 * i * 4
 
         while (i--) {
             body = this._bodies[i];
@@ -139,7 +175,14 @@ class Transactions{
                 this._world.removeBody(this._bodies[i]);
                 this._bodies.splice(i, 1);
                 //console.log('body removed');
-                this._removeTransaction({id:id});
+                //this._removeTransaction({id:id});
+                var buffer = new ArrayBuffer(5);
+                var view = new DataView(buffer);
+
+                view.setUint8(0, 2); //REMOVE NODE CODE 2
+                view.setUint32(1, id);
+                broadcast(buffer, { binary: true, mask: true });
+
             } else if (body.sleepState !== 2) {
 
                 var px = +body.position.x.toFixed(4);
@@ -153,35 +196,42 @@ class Transactions{
                 var qz = +body.quaternion.z.toFixed(4);
                 var quaternion = {w:qw,x:qx,y:qy,z:qz};
 
-                var candidate = body.candidate;
-                var reTransaction = body.reTransaction;
-
-                //data.push({ id: id, p: position, q: quaternion, c: candidate, rt: reTransaction });
                 data.push({ id: id, p: position, q: quaternion });
-
-                /*
-                var px = body.position.x;
-                var py = body.position.y;
-                var pz = body.position.z;
-                var qw = body.quaternion.w;
-                var qx = body.quaternion.x;
-                var qy = body.quaternion.y;
-                var qz = body.quaternion.z;
-
-                var d = new Float32Array(data);
-                */
 
             }
         }
 
-        return data;
+        //DIRTY BUT FOR NOW CONVERT JS ARRAY TO BINARY
+
+        var length = data.length;
+        var buffer = new ArrayBuffer(2 + (length * 32));
+        var view = new DataView(buffer);
+        var i32 = 0;
+
+        view.setUint8(0, 4); // ALL CODE 4
+        view.setUint8(1, length); // HOW MANY OBJECTS
+        for(i=0; i<length; i++){
+            i32 = i * 32;
+            view.setUint32(2+i32+0, data[i].id);
+            view.setFloat32(2+i32+4, data[i].p.x);
+            view.setFloat32(2+i32+8, data[i].p.y);
+            view.setFloat32(2+i32+12, data[i].p.z);
+            view.setFloat32(2+i32+16, data[i].q.w);
+            view.setFloat32(2+i32+20, data[i].q.x);
+            view.setFloat32(2+i32+24, data[i].q.y);
+            view.setFloat32(2+i32+28, data[i].q.z);
+
+            //console.log("should be: " + data[i].id);
+            //console.log("actually is : " + view.getUint32(2+i32+0));
+        }
+
+        broadcast(buffer, { binary: true, mask: true });
     }
 
-    getAll(){
+    getAll(user_ws){
         var body, i = this._bodies.length;
 
         var data = [];
-        //var data = new ArrayBuffer(7 * i * 4);
 
         while (i--) {
 
@@ -199,15 +249,35 @@ class Transactions{
             var quaternion = {w:qw,x:qx,y:qy,z:qz};
 
             var id = body.id;
-            var candidate = body.candidate;
-            var reTransaction = body.reTransaction;
 
-            //data.push({ id: id, p: position, q: quaternion, c: candidate, rt: reTransaction});
             data.push({ id: id, p: position, q: quaternion });
 
         }
 
-        return data;
+        var length = data.length;
+        var buffer = new ArrayBuffer(2 + (length * 32));
+        var view = new DataView(buffer);
+        var i32 = 0;
+
+        //console.log("Array Length: " + buffer.byteLength);
+        //console.log("Update Length: " + length);
+
+        view.setUint8(0, 8); // ALL CODE 8
+        view.setUint8(1, length); // HOW MANY OBJECTS
+        for(i=0; i<length; i++){
+            i32 = i * 32;
+            view.setUint32(2+i32+0, data[i].id);
+            view.setFloat32(2+i32+4, data[i].p.x);
+            view.setFloat32(2+i32+8, data[i].p.y);
+            view.setFloat32(2+i32+12, data[i].p.z);
+            view.setFloat32(2+i32+16, data[i].q.w);
+            view.setFloat32(2+i32+20, data[i].q.x);
+            view.setFloat32(2+i32+24, data[i].q.y);
+            view.setFloat32(2+i32+28, data[i].q.z);
+        }
+
+        user_ws.send(buffer, { binary: true });
+
     }
 
     get bodies(){
