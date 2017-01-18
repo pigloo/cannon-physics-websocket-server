@@ -48,17 +48,15 @@ wss.on('connection', function (user_ws) {
     var visitor = ua('UA-19451182-10');
     visitor.pageview('/physics/websocket').send();
 
-    //updateAll(user_ws);
+    //ON CONNETION SEND WORLD TO USER
     transactions.getAll(user_ws);
 
     user_ws.on('message', function message(evt, flags) {
         var object = JSON.parse(evt);
-        //console.log(object);
         if(object.d === 'scatter'){
             transactions.scatter();
         }
         if(object.d === 'updateAll'){
-            //updateAll(user_ws);
             transactions.getAll(user_ws);
         }
     });
@@ -67,13 +65,6 @@ wss.on('connection', function (user_ws) {
 wss.broadcast = function broadcast(data) {
     wss.clients.forEach(function each(client) {
         try {
-            /*
-            client.send(JSON.stringify(data), function (err) {
-                if (err) {
-                    console.log(err.message);
-                }
-            });
-            */
             client.send(data, function (err) {
                 if (err) {
                     console.log(err.message);
@@ -98,56 +89,23 @@ wsc.on('open', function() {
     wsc.send('{"op":"unconfirmed_sub"}');
 });
 wsc.on('message', function(message) {
-    //console.log('transaction');
-    //transactions.addTransaction(addTransaction.bind(this));
     transactions.addTransaction(wss.broadcast);
 });
-
-//#############################################################################
-// ADD TRANSACTION
-//#############################################################################
-
-/*
-
-function updateAll(ws){
-    var data = transactions.getAll();
-    ws.send(JSON.stringify({
-        s: 'all',
-        d: data
-    }));
-}
-
-function addTransaction(data){
-    wss.broadcast({
-        s: 'add',
-        d: data
-    });
-}
-
-function removeTransaction(data){
-    wss.broadcast({
-        s: 'remove',
-        d: data
-    });
-}
-
-function updateAll(user_ws){
-    var data = transactions.getAll();
-    user_ws.send(data, { binary: true, mask: true });
-}
-*/
 
 //#############################################################################
 // ANIMATION FRAMES
 //#############################################################################
 
+var everyother = 1;
 raf(function tick() {
 
     physics.updatePhysics();
-    transactions.updatePositions(wss.broadcast);
 
-    //wss.broadcast({ s: 'update', d: data });
-    //wss.broadcast(data, { binary: true, mask: true });
+    if(everyother % 2){
+        transactions.updatePositions(wss.broadcast);
+        everyother = 1;
+    }
+    everyother++;
 
     raf(tick);
 });
