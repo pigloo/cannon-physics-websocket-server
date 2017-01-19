@@ -11,15 +11,15 @@ class Transactions{
         this._ToRad = 0.0174532925199432957;
         this._lastId = 1;
 
-        //this._TransactionShape = new CANNON.Sphere(0.2);
+        this._TransactionShape = new CANNON.Sphere(0.2);
 
         //ROTATE CYLINDER TO MATCH THREE.JS ORIENTATION
-
+        /*
         this._TransactionShape = new CANNON.Cylinder(0.4,0.4,0.1,16);
         var q = new CANNON.Quaternion();
         q.setFromAxisAngle(new CANNON.Vec3(1,0,0),Math.PI / 2);
         this._TransactionShape.transformAllPoints(new CANNON.Vec3(),q);
-        
+        */
     }
 
     getNextId() {
